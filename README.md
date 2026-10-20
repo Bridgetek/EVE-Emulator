@@ -13,7 +13,7 @@ DLL from C# through the included P/Invoke wrapper examples.
 ```text
 bin/
   bt8xxemu.dll      Runtime DLL for the emulator
-  mx25lemu.dll      Runtime dependency for flash emulation
+  btflashemu.dll    Runtime library for flash emulation
   zlib.dll          Runtime compression dependency
 
 include/
@@ -55,7 +55,10 @@ Storage devices must be configured before launching the emulator:
 
 - Flash image: initialize `BT8XXEMU_FlashParameters`, set `DataFilePath`
   or `Data`, create the Flash object, and assign it to the emulator parameters'
-  `Flash` field.
+  `Flash` field. `btflashemu.dll` is the default flash library. To choose a
+  specific chip, list available devices with `BT8XXEMU_Flash_list` and set
+  `DeviceType` to a returned part or family name before creating the Flash
+  object.
 - SD card image (BT820): set `SDCardFilePath` before calling
   `BT8XXEMU_run`, or use `BT8XXEMU_insertSDCardImage` or
   `BT8XXEMU_insertSDCardFolder` while the emulator is running.
@@ -72,7 +75,7 @@ On Windows, file paths in the native API use `eve_tchar_t`, which is
 4. Deploy the runtime DLLs from `bin/` next to your executable, or make sure
    they are available on the process `PATH`:
    - `bt8xxemu.dll`
-   - `mx25lemu.dll`
+   - `btflashemu.dll` when attaching Flash
    - `zlib.dll`
 
 Include the public API with:
@@ -81,8 +84,9 @@ Include the public API with:
 #include "bt8xxemu.h"
 ```
 
-The current public API version exposed by the header is `BT8XXEMU_VERSION_API`
-`16`.
+The current public header defines `BT8XXEMU_VERSION_API` as `19`. The bundled
+C# examples still use API version `16`, which the current DLL supports for
+compatibility; their P/Invoke wrapper does not expose the new API 19 controls.
 
 ## Major Native APIs
 
@@ -98,13 +102,28 @@ validate the structure layout used by the application.
 | `BT8XXEMU_isRunning` | Reports whether the emulator is still running. It becomes false after the output window is closed or the emulator is stopped. |
 | `BT8XXEMU_stop` | Stops a running emulator. It is safe to call more than once. |
 | `BT8XXEMU_destroy` | Stops the emulator if necessary and releases the emulator object. Call it before the process exits. |
-| `BT8XXEMU_Flash_defaults` | Initializes `BT8XXEMU_FlashParameters` with the default Flash device and capacity. |
+| `BT8XXEMU_setFlag` | Enables or disables one emulator flag at runtime and returns its resulting value. Only PWM, HSF, and window-rotation flags can be changed at runtime. |
+| `BT8XXEMU_Flash_defaults` | Initializes `BT8XXEMU_FlashParameters` with the default Flash library and capacity. |
+| `BT8XXEMU_Flash_list` | Lists the chips available in a Flash library so an application can select a part or family through `BT8XXEMU_FlashParameters.DeviceType`. |
 | `BT8XXEMU_Flash_create` | Creates a Flash device from a file, memory buffer, or empty Flash configuration. |
 | `BT8XXEMU_Flash_destroy` | Releases a Flash object after every emulator that uses it has been destroyed. |
 | `BT8XXEMU_chipSelect` | Asserts or releases the EVE SPI chip-select signal. |
 | `BT8XXEMU_transfer` | Exchanges one byte over the emulated EVE SPI bus. Use it between chip-select assertion and release. |
 | `BT8XXEMU_touchSetXY` / `BT8XXEMU_touchResetXY` | Supplies or clears touch input when using driverless graphics output. The built-in window handles mouse input automatically. |
 | `BT8XXEMU_insertSDCardImage` / `BT8XXEMU_insertSDCardFolder` / `BT8XXEMU_ejectSDCard` | Manages BT820 SD-card media at runtime. |
+
+## Rendering Options
+
+When hardware acceleration is enabled, the software renderer handles frames
+while Vulkan shaders compile, so emulator initialization remains responsive.
+`BT8XXEMU_rendererDevices` lists available GPU renderers, and
+`BT8XXEMU_getRenderer` reports the renderer selected for an emulator.
+
+Set `BT8XXEMU_EmulatorEnableWindowRotate` in the emulator flags to reverse the
+rotation of each frame in the default output window. This does not change the
+buffer passed to the `Graphics` callback. To enable it after startup, call
+`BT8XXEMU_setFlag(emulator, BT8XXEMU_EmulatorEnableWindowRotate, 1)`.
+`BT8XXEMU_setWindowRotate` can also select a fixed window rotation at runtime.
 
 ## Running BT8XXEMU without Flash
 
@@ -252,7 +271,7 @@ examples/CPP/BT817/Flash/build/bin/Debug/BT817FlashExample.exe
 examples/CPP/BT817/Flash/VisualStudio/bin/Debug/FlashExample.exe
 ```
 
-Both builds copy `bt8xxemu.dll`, `mx25lemu.dll`, `zlib.dll`, and
+Both builds copy `bt8xxemu.dll`, `btflashemu.dll`, `zlib.dll`, and
 `flash-817-default.bin` beside the executable. See the
 [example README](examples/CPP/BT817/Flash/README.md) for complete Debug and
 Release instructions.
@@ -354,7 +373,7 @@ example also copies `flash-817-default.bin` for its flash-emulation setup.
 
 When distributing an application that uses the emulator, include the executable
 or library you built along with the runtime files from `bin/` that it depends
-on. Flash examples require `mx25lemu.dll`; the BT820 SD Card example does not
+on. Flash examples require `btflashemu.dll`; the BT820 SD Card example does not
 attach Flash and therefore deploys only `bt8xxemu.dll` and `zlib.dll`.
 
 ## Notes

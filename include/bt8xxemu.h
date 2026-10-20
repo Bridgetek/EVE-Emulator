@@ -30,9 +30,9 @@ typedef char eve_tchar_t;
 
 /**
 * API version is increased whenever BT8XXEMU_EmulatorParameters format changes or functions are modified.
-* Current release DLL can also be dropped into existing applications targeting older API versions 11 and 12 using the older headers.
+* Current release DLL can also be dropped into existing applications targeting older API versions 11, 12 and 16 using the older headers.
 */
-#define BT8XXEMU_VERSION_API 16
+#define BT8XXEMU_VERSION_API 19
 
 #ifdef BT8XXEMU_REMOTE
 #ifndef _WIN32
@@ -47,7 +47,7 @@ typedef char eve_tchar_t;
 #ifdef _WIN32
 #define BT8XXEMU_API __declspec(dllexport)
 #else
-#define BT8XXEMU_API
+#define BT8XXEMU_API __attribute__((visibility("default")))
 #endif
 #else
 #ifdef _WIN32
@@ -155,10 +155,24 @@ typedef enum
 	// may be used to mitigate any overflows in the render engine
 	// on Linux, this setting makes no difference, as the kernel commits on demand
 	BT8XXEMU_EmulatorEnableRamGMaxCommit = 0x10000,
-	// enable fast forwarding to the latest frame in the scanout swapchain (default: on)
-	// this is useful primarily to reduce unnecessary output processing in the emulator
-	// for debugging where all frames are required this may need to be disabled
+	// BT820: when REG_SO_SOURCE is SWAPCHAIN_0, send each frame to the Graphics callback or window immediately after rendering
+	// (default: off). This reduces tool latency while preserving swapchain advancement and frame pacing at scanout.
+	// If no render callback occurred since the previous scanout, scanout sends an unchanged-frame callback to maintain the
+	// callback rate. Other scanout sources, including direct RAM addresses, are still presented at scanout
 	BT8XXEMU_EmulatorEnableFastForwardSwapchain = 0x20000,
+	// [API 19] With an all-zero RendererDeviceUuid, prefer a discrete GPU if one is available (default: on).
+	// Takes priority over BT8XXEMU_EmulatorHybridIntegratedRenderer. Use BT8XXEMU_getRenderer to query the selected renderer
+	BT8XXEMU_EmulatorPreferDedicatedRenderer = 0x40000,
+	// [API 19] enable hybrid mode when an integrated renderer is selected (default: on)
+	// with an all zero RendererDeviceUuid, also makes integrated renderers eligible for automatic selection when no discrete
+	// renderer was chosen. Without this flag, automatic selection falls back to software when no discrete renderer was chosen
+	// a selected integrated renderer runs alone when hybrid mode is unavailable, or when explicitly selected without this flag
+	BT8XXEMU_EmulatorHybridIntegratedRenderer = 0x80000,
+	// [API 19] turn the default output window back from the rotation each frame was rendered with: REG_ROTATE, or on BT820
+	// the REG_RE_ROTATE of the presented frame (default: off). A portrait UI then shows upright and mirrors are undone, and the
+	// mouse touches the panel pixel it shows. The Graphics callback receives the panel output unturned. Can be changed at
+	// runtime, BT8XXEMU_setWindowRotate selects a fixed rotation instead
+	BT8XXEMU_EmulatorEnableWindowRotate = 0x100000,
 
 } BT8XXEMU_EmulatorFlags;
 
@@ -172,6 +186,13 @@ typedef enum
 	BT8XXEMU_FrameChanged = 0x04,
 	// frame rendered right after display list swap
 	BT8XXEMU_FrameSwap = 0x08,
+	// [API 19] the current render state still matches the state used for rendering the frame. On BT820, rendering
+	// an intermediate target clears this flag; rendering a display target sets it again. Always set on EVE1 to EVE4
+	BT8XXEMU_FrameCurrentState = 0x10,
+	// [API 19] the renderer device of BT8XXEMU_getRenderer rendered the frame, alone or together with the CPU in hybrid
+	// mode. Clear when the software renderer did, e.g. while a renderer device is still starting up or failed to render.
+	// On BT820 the flag follows the pixels: a frame copied from one rendered on the device keeps it
+	BT8XXEMU_FrameAccelerated = 0x20,
 
 	// NOTE: Difference between FrameChanged and FrameBufferChanged is that
 	// FrameChanged will only be true if the content of the frame changed,
@@ -194,6 +215,37 @@ typedef enum
 	// FrameChanged, and get the first frame which has FrameBufferComplete set.
 
 } BT8XXEMU_FrameFlags;
+
+// [API 19] Flags of a BT8XXEMU_RenderTarget
+typedef enum
+{
+	// the buffer is used for scanout, as configured by REG_SO_SOURCE. Clear for an intermediate render target
+	BT8XXEMU_RenderTargetScanout = 0x01,
+	// the display list swap changed the contents of the render target buffer. Clear otherwise, or when the target is invalid
+	BT8XXEMU_RenderTargetChanged = 0x02,
+	// the renderer device of BT8XXEMU_getRenderer rendered the pixels of the target, alone or together with the CPU in
+	// hybrid mode. Clear when the software renderer did, e.g. while a renderer device is still starting up or failed to render.
+	// A target copied from, or left unchanged as, an earlier render keeps the flag of that render
+	BT8XXEMU_RenderTargetAccelerated = 0x04,
+
+} BT8XXEMU_RenderTargetFlags;
+
+// [API 19] Target rendered by EVE5 after a display list swap, see BT8XXEMU_EmulatorParameters::RenderTarget
+typedef struct
+{
+	// The address in RAM_G where the render engine wrote the frame. REG_RE_DEST, or the PTR of a SWAPCHAIN_0 entry
+	uint32_t Address;
+	// REG_RE_FORMAT
+	uint32_t Format;
+	// The size as written by the render engine. REG_RE_W rounded down to a multiple of 16 (1 to 15 counts as 2048), and REG_RE_H
+	uint32_t Width;
+	uint32_t Height;
+	// REG_RE_ROTATE and REG_RE_DITHER
+	uint32_t Rotate;
+	uint32_t Dither;
+	// See BT8XXEMU_RenderTargetFlags
+	BT8XXEMU_RenderTargetFlags Flags;
+} BT8XXEMU_RenderTarget;
 
 typedef struct
 {
@@ -224,6 +276,11 @@ typedef struct
 	// Necessary when doing very heavy work on the MCU or Coprocessor
 	uint32_t ReduceGraphicsThreads;
 
+	// [API 19] UUID of the GPU to use, from BT8XXEMU_rendererDevices.
+	// An all-zero UUID (the default) selects a renderer using BT8XXEMU_EmulatorPreferDedicatedRenderer and
+	// BT8XXEMU_EmulatorHybridIntegratedRenderer. With neither flag set, it selects the CPU renderer.
+	uint8_t RendererDeviceUuid[16];
+
 	// Sleep function for MCU thread usage throttle, defaults to BT8XXEMU_SleepWake implementation.
 	// This must implement a high resolution sleep function.
 	// A corresponding wake function must be provided.
@@ -231,6 +288,10 @@ typedef struct
 	// - https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/
 	// - https://github.com/python/cpython/issues/89592
 	void (*MCUSleep)(BT8XXEMU_Emulator *sender, void *context, int ms);
+
+	// Wake function for MCU thread usage throttle, defaults to BT8XXEMU_SleepWake implementation.
+	// This may be called whenever registers that the MCU is waiting for are written to.
+	void (*MCUWake)(BT8XXEMU_Emulator *sender, void *context);
 
 	// Replaces the default builtin ROM with a custom ROM from a file.
 	eve_tchar_t RomFilePath[260];
@@ -250,11 +311,26 @@ typedef struct
 	// The output parameter is false (0) when the display is turned off.
 	// The contents of the buffer pointer are undefined after this
 	// function returns. Create a copy to use it on another thread.
+	// On BT820 the device state during the Graphics callback corresponds to the state at scanout
+	// (except when fast-forward is enabled), not to the render engine state of the buffer.
 	// Return false (0) when the application must exit, otherwise return true (1).
 	int (*Graphics)(BT8XXEMU_Emulator *sender, void *context, int output, const argb8888 *buffer, uint32_t hsize, uint32_t vsize, BT8XXEMU_FrameFlags flags);
 
-	// Interrupt handler
-	// void (*Interrupt)(void *sender, void *context);
+	// [API 19] BT820 render-engine callback. Called on the render thread after processing each display list swap,
+	// for both intermediate and display targets, including copied or unchanged targets.
+	// The rendered buffer is guaranteed to exist in RAM_G at the reported address until this call returns,
+	// unless the address is written to outside of the render process.
+	void (*RenderTarget)(BT8XXEMU_Emulator *sender, void *context, const BT8XXEMU_RenderTarget *target);
+
+	// [API 19] Interrupt callback, called when INT_N asserts: REG_INT_EN is set, and a flag of REG_INT_FLAGS is set in REG_INT_MASK.
+	// May run on an emulator thread or on a caller's thread, for example during an SPI write to REG_INT_EN.
+	// Return immediately without blocking or calling back into the emulator. Notify the interrupt-service thread,
+	// which should read REG_INT_FLAGS to identify and acknowledge the sources, as a hardware host would.
+	// Concurrent interrupt sources may cause extra callbacks; use the flags to determine what needs servicing.
+	// Reading REG_INT_FLAGS clears the flags except for sources held active. In particular, INT_TAG stays set after
+	// a render changes REG_TOUCH_TAG until the next render. If enabled in REG_INT_MASK, it keeps INT_N asserted.
+	// See BT8XXEMU_hasInterrupt for the current level
+	void (*Interrupt)(BT8XXEMU_Emulator *sender, void *context);
 
 	// Log callback
 	void (*Log)(BT8XXEMU_Emulator *sender, void *context, BT8XXEMU_LogType type, const char *message);
@@ -276,18 +352,57 @@ typedef struct
 	// SD card image file to mount (BT820 series), the file must already exist, defaults to an empty string
 	eve_tchar_t SDCardFilePath[260];
 
-	// Wake function for MCU thread usage throttle, defaults to BT8XXEMU_SleepWake implementation.
-	// This may be called whenever registers that the MCU is waiting for are written to.
-	void (*MCUWake)(BT8XXEMU_Emulator *sender, void *context);
-
 } BT8XXEMU_EmulatorParameters;
+
+typedef enum
+{
+	BT8XXEMU_RendererOther = 0,
+	BT8XXEMU_RendererIntegrated = 1,
+	BT8XXEMU_RendererDiscrete = 2,
+	BT8XXEMU_RendererVirtual = 3,
+	BT8XXEMU_RendererCpu = 4, // A Vulkan implementation on the CPU
+	BT8XXEMU_RendererSoftware = 5, // The emulator's own CPU renderer, all zero Uuid, from BT8XXEMU_getRenderer
+} BT8XXEMU_RendererType;
+
+// [API 19] Flags returned by BT8XXEMU_getRenderer
+typedef enum
+{
+	// the renderer device renders together with the CPU (BT8XXEMU_EmulatorHybridIntegratedRenderer)
+	BT8XXEMU_RendererStateHybrid = 0x01,
+	// the renderer device is still starting up, and the CPU renders the frames until it is ready, without BT8XXEMU_FrameAccelerated
+	BT8XXEMU_RendererStateStarting = 0x02,
+
+} BT8XXEMU_RendererState;
 
 typedef struct
 {
-	// Device type, by library name, default "mx25lemu"
+	// Device name, UTF-8
+	char Name[256];
+	// Identifies the device across processes and runs, for BT8XXEMU_EmulatorParameters RendererDeviceUuid
+	uint8_t Uuid[16];
+	BT8XXEMU_RendererType Type;
+	// PCI vendor and device ID where applicable
+	uint32_t VendorId;
+	uint32_t DeviceId;
+
+} BT8XXEMU_RendererDevice;
+
+typedef struct
+{
+	// [API 19] Flash library, default "btflashemu", which contains every
+	// bundled flash chip. A custom flash library is named by its file name
+	// without extension. Blank selects "btflashemu"
+	eve_tchar_t LibraryName[26];
+
+	// Exact part name or family name from the device list of the library
+	// (BT8XXEMU_Flash_list), default blank. Blank selects the part that
+	// works with the default flash driver blob at the requested size.
+	// The former library names "mx25l" and "mx25lemu" are treated as blank
 	eve_tchar_t DeviceType[26];
 
-	// Size of the flash memory in bytes, default 8MB
+	// Size of the flash memory in bytes, default 8MB. With an exact part
+	// name, 0 selects the size of that part, and another size selects the
+	// family of the part at that size
 	ptrdiff_t SizeBytes;
 
 	// Data file to load onto the flash, default NULL
@@ -318,6 +433,37 @@ typedef struct
 
 } BT8XXEMU_FlashParameters;
 
+// [API 19] A flash chip of a flash library
+typedef struct
+{
+	// Exact part name, for example "W25Q64JV", usable as DeviceType
+	eve_tchar_t PartName[26];
+
+	// Family name, for example "W25Q-JV", usable as DeviceType with any SizeBytes
+	eve_tchar_t FamilyName[26];
+
+	// Manufacturer, for example "Winbond"
+	eve_tchar_t ManufacturerName[26];
+
+	// Size of the part in bytes
+	ptrdiff_t SizeBytes;
+
+	// Readable description for a device list in a user interface, for example "Winbond W25Q64JV (8 MiB)"
+	eve_tchar_t Description[64];
+
+} BT8XXEMU_FlashDevice;
+
+// [API 19] The flash chip emulated by a flash emulator instance
+typedef struct
+{
+	// Flash library of the instance
+	eve_tchar_t LibraryName[26];
+
+	// Part and size emulated. PartName is blank when the size is not that of a listed part
+	BT8XXEMU_FlashDevice Device;
+
+} BT8XXEMU_FlashInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -331,6 +477,16 @@ BT8XXEMU_API extern const char *BT8XXEMU_version();
 
 // Initialize the default emulator parameters
 BT8XXEMU_API extern void BT8XXEMU_defaults(uint32_t versionApi, BT8XXEMU_EmulatorParameters *params, BT8XXEMU_EmulatorMode mode);
+
+// [API 19] List host GPUs that support Vulkan 1.1 and have a compute queue. Does not require an emulator instance.
+// Writes up to maxDevices entries into devices, which may be NULL, and returns the number of devices. Returns 0 when Vulkan is not available.
+BT8XXEMU_API extern int BT8XXEMU_rendererDevices(uint32_t versionApi, BT8XXEMU_RendererDevice *devices, int maxDevices);
+
+// [API 19] Write the selected renderer to device. CPU rendering, including fallback after a GPU failure, is reported as
+// BT8XXEMU_RendererSoftware with an all-zero UUID. Returns BT8XXEMU_RendererState flags: hybrid CPU/GPU rendering
+// (BT8XXEMU_EmulatorHybridIntegratedRenderer), and starting while the device is prepared in the background and the CPU
+// renders the frames. Returns 0 otherwise
+BT8XXEMU_API extern int BT8XXEMU_getRenderer(BT8XXEMU_Emulator *emulator, BT8XXEMU_RendererDevice *device);
 
 // Run the emulator on the current thread. Returns when the emulator is fully stopped when a Main function is supplied, returns when the emulator is fully started otherwise. Parameter versionApi must be set to BT8XXEMU_VERSION_API
 BT8XXEMU_API extern void BT8XXEMU_run(uint32_t versionApi, BT8XXEMU_Emulator **emulator, const BT8XXEMU_EmulatorParameters *params);
@@ -354,7 +510,7 @@ BT8XXEMU_API extern uint8_t BT8XXEMU_transfer(BT8XXEMU_Emulator *emulator, uint8
 // Set chip select. Must be set to 1 to start data transfer, 0 to end. See FT8XX documentation for CS_N
 BT8XXEMU_API extern void BT8XXEMU_chipSelect(BT8XXEMU_Emulator *, int cs);
 
-// Returns 1 if there is an interrupt flag set. Depends on mask. See FT8XX documentation for INT_N
+// Returns 1 while INT_N is asserted: REG_INT_EN is set, and a flag of REG_INT_FLAGS is set in REG_INT_MASK. See FT8XX documentation for INT_N
 BT8XXEMU_API extern int BT8XXEMU_hasInterrupt(BT8XXEMU_Emulator *emulator);
 
 //////////////
@@ -370,8 +526,14 @@ BT8XXEMU_API extern void BT8XXEMU_touchResetXY(BT8XXEMU_Emulator *emulator, int 
 // Reset the touch transform matrix to default identity, applying current display rotation and mirroring (ROTATE, HSIZE, VSIZE). Call after CMD_CALIBRATE to restore to pixel perfect settings
 BT8XXEMU_API extern void BT8XXEMU_touchTransformReset(BT8XXEMU_Emulator *emulator);
 
-// Set a single emulation flag on or off. Only PWM and HSF options can be changed at runtime. Returns the value of the flag after the operation
+// Set a single emulation flag on or off. Only PWM, HSF and window rotate options can be changed at runtime. Returns the value of the flag after the operation
 BT8XXEMU_API extern int BT8XXEMU_setFlag(BT8XXEMU_Emulator *emulator, BT8XXEMU_EmulatorFlags flag, int value);
+
+// [API 19] Turn the default output window back from a fixed rotation, a CMD_SETROTATE value from 0 to 7 (0 shows the panel
+// output as it is), or with -1 from the rotation of each frame, as BT8XXEMU_EmulatorEnableWindowRotate does. A fixed turn
+// suits an application whose mirror is meant to be seen, such as a right to left layout drawn with a mirrored rotation.
+// Does not affect the Graphics callback
+BT8XXEMU_API extern void BT8XXEMU_setWindowRotate(BT8XXEMU_Emulator *emulator, int rotate);
 
 /////////////
 // SD HOST //
@@ -409,14 +571,28 @@ BT8XXEMU_API extern void BT8XXEMU_advanceLvdsRXWp(BT8XXEMU_Emulator *emulator);
 
 #ifndef BT8XXEMU_FLASH_LIBRARY
 
-// Initialize the default flash emulator parameters
+// Initialize the default flash emulator parameters: the "btflashemu" library, no device type, 8MB
 BT8XXEMU_API extern void BT8XXEMU_Flash_defaults(uint32_t versionApi, BT8XXEMU_FlashParameters *params);
+
+// [API 19] Initialize the flash emulator parameters with defaults that works with the default
+// flash firmware blob or ROM firmware of the specified emulator mode at the given size.
+// Returns 1 when the mode and size have a known working part, 0 when the parameters are set to the nearest valid configuration
+// Size 0 selects the flash chip fitted on the development boards of the emulated chip generation
+BT8XXEMU_API extern int BT8XXEMU_Flash_defaultsEx(uint32_t versionApi, BT8XXEMU_FlashParameters *params, BT8XXEMU_EmulatorMode mode, ptrdiff_t sizeBytes);
+
+// [API 19] List the flash chips of a flash library (NULL or blank for "btflashemu"). Fills up to
+// count entries of devices and returns the total number of chips of the library, or a negative
+// value when the library cannot be loaded
+BT8XXEMU_API extern int BT8XXEMU_Flash_list(uint32_t versionApi, const eve_tchar_t *libraryName, BT8XXEMU_FlashDevice *devices, int count);
 
 // Create flash emulator instance
 BT8XXEMU_API extern BT8XXEMU_Flash *BT8XXEMU_Flash_create(uint32_t versionApi, const BT8XXEMU_FlashParameters *params);
 
 // Destroy flash emulator instance
 BT8XXEMU_API extern void BT8XXEMU_Flash_destroy(BT8XXEMU_Flash *flash);
+
+// [API 19] Get the library and the chip emulated by a flash emulator instance. Returns 1 on success
+BT8XXEMU_API extern int BT8XXEMU_Flash_info(BT8XXEMU_Flash *flash, BT8XXEMU_FlashInfo *info);
 
 // Transfer data using SPI or Quad SPI protocol. Bit 0:3 are data, bit 4 is cable select (0 active), SCK is clock. In single mode bit 0 is MOSI and bit 1 is MISO
 BT8XXEMU_API extern uint8_t BT8XXEMU_Flash_transferSpi4(BT8XXEMU_Flash *flash, uint8_t signal);

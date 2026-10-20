@@ -63,7 +63,7 @@
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\mx25lemu.dll" "$(OutDir)mx25lemu.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\btflashemu.dll" "$(OutDir)btflashemu.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\flash-817-default.bin" "$(OutDir)flash-817-default.bin" || exit /b 1</Command>
     </PostBuildEvent>
@@ -89,7 +89,7 @@ copy /Y "$(ProjectDir)..\flash-817-default.bin" "$(OutDir)flash-817-default.bin"
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\mx25lemu.dll" "$(OutDir)mx25lemu.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\btflashemu.dll" "$(OutDir)btflashemu.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\flash-817-default.bin" "$(OutDir)flash-817-default.bin" || exit /b 1</Command>
     </PostBuildEvent>

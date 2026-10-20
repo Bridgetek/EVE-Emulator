@@ -16,7 +16,7 @@ set(EMULATOR_INCLUDE "${REPOSITORY_ROOT}/include")
 set(EMULATOR_LIBRARY "${REPOSITORY_ROOT}/lib/bt8xxemu.lib")
 set(RUNTIME_FILES
     "${REPOSITORY_ROOT}/bin/bt8xxemu.dll"
-    "${REPOSITORY_ROOT}/bin/mx25lemu.dll"
+    "${REPOSITORY_ROOT}/bin/btflashemu.dll"
     "${REPOSITORY_ROOT}/bin/zlib.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/flash-820-default.bin")
 

@@ -77,6 +77,6 @@ sd/
   bicycle.anim.reloc
 ```
 
-`mx25lemu.dll` is not required because this example does not attach a Flash
+`btflashemu.dll` is not required because this example does not attach a Flash
 device. The executable-relative folder lookup allows the program to be launched
 from any working directory.
