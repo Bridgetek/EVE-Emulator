@@ -4,3 +4,5 @@ examples/**/obj/
 examples/**/.vs/
 examples/**/*.user
 examples/**/*.suo
+examples/**/__pycache__/
+examples/**/*.pyc

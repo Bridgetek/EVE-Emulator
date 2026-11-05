@@ -35,6 +35,13 @@ examples/
     BT81X/          C# WinForms example for BT81X devices
     BT82X/          C# WinForms example for BT82X devices
     common/         Shared C# wrapper sources used by the sample projects
+  Python/
+    BT817/
+      Flash/        Python example displaying an ASTC image from Flash
+    BT820/
+      Flash/        Python example displaying an RGB8 image from Flash
+      SDCard/       Python example mounting a folder as a virtual BT820 SD card
+    common/         Shared Python ctypes, SPI, and GPU definitions
 ```
 
 ## Supported EVE Devices
@@ -368,6 +375,26 @@ To run an example:
 The projects contain post-build steps that copy the required runtime DLLs from
 the repository `bin/` directory into the example output directory. The BT81X
 example also copies `flash-817-default.bin` for its flash-emulation setup.
+
+## Running the Python Example
+
+The Python examples use standard-library `ctypes` with 64-bit Python on
+Windows. They share native bindings and SPI helpers through
+`examples/Python/common/`:
+
+- [BT817 Flash](examples/Python/BT817/Flash/README.md) displays the bundled ASTC image.
+- [BT820 Flash](examples/Python/BT820/Flash/README.md) displays the bundled RGB8 image.
+- [BT820 SD card](examples/Python/BT820/SDCard/README.md) mounts a folder and displays an animation frame.
+
+Each example supports `--check` to verify the DLL and required asset without
+opening an emulator window.
+
+The shared [`eve_gpu_defs.py`](examples/Python/common/eve_gpu_defs.py) exposes
+registers, coprocessor commands, options, formats, and display-list encoders
+for every emulator mode. Use a chip namespace such as `BT820.REG_HSIZE`,
+`BT820.CMD_SDATTACH`, or `BT820.CLEAR(1, 1, 1)`; `for_mode(mode)` selects the
+same definitions from a native emulator mode value. The definitions are
+bundled, so customers do not need the source headers or build tools.
 
 ## Redistributing an Application
 
