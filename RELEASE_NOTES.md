@@ -15,6 +15,7 @@
 
 - Updated to zlib 1.4. The runtime DLL is now named `libz.dll` instead of
   `zlib.dll`.
+- Added Ubuntu 24.04 amd64 runtime and development Debian packages.
 
 ## Version 5.3.35 - October 15, 2026
 

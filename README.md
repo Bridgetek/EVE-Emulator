@@ -4,9 +4,10 @@ This repository provides the binary release and public header files for the
 BT8XX/EVE emulator, together with example projects that show how to launch and
 drive the emulator from end-user applications.
 
-The emulator itself is distributed here as prebuilt binaries. Application code
-can link against the provided import library/header from C or C++, or call the
-DLL from C# through the included P/Invoke wrapper examples.
+The emulator itself is distributed here as prebuilt binaries for Windows and
+Ubuntu. On Windows, application code can link against the provided import
+library/header from C or C++, or call the DLL from C# through the included
+P/Invoke wrapper examples.
 
 ## Repository Layout
 
@@ -23,6 +24,9 @@ include/
 
 lib/
   bt8xxemu.lib      Windows import library for C/C++ projects
+
+packages/
+  ubuntu24/amd64/   Ubuntu 24.04 runtime and development Debian packages
 
 examples/
   CPP/
@@ -74,7 +78,20 @@ On Windows, file paths in the native API use `eve_tchar_t`, which is
 `wchar_t`. Flash writes are temporary by default; set `Persistent` in
 `BT8XXEMU_FlashParameters` when changes should be written back to the file.
 
-## Using the Emulator in a C or C++ Project
+## Installing on Ubuntu 24.04 (amd64)
+
+The runtime and development packages are in `packages/ubuntu24/amd64/`. From
+that directory, install both packages with:
+
+```bash
+sudo apt install ./libbt8xxemu_5.3.36-1_amd64.deb ./libbt8xxemu-dev_5.3.36-1_amd64.deb
+```
+
+The runtime package installs the shared libraries; the development package
+installs the public headers and `bt8xxemu` pkg-config file. The examples in
+this repository currently target Windows.
+
+## Using the Emulator in a C or C++ Project on Windows
 
 1. Add `include/` to your compiler include directories.
 2. Add `lib/` to your linker library directories.
