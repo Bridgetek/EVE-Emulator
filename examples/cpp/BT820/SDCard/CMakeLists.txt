@@ -17,7 +17,7 @@ set(EMULATOR_LIBRARY "${REPOSITORY_ROOT}/lib/bt8xxemu.lib")
 set(SD_ASSET "${CMAKE_CURRENT_SOURCE_DIR}/sd/bicycle.anim.reloc")
 set(RUNTIME_FILES
     "${REPOSITORY_ROOT}/bin/bt8xxemu.dll"
-    "${REPOSITORY_ROOT}/bin/zlib.dll")
+    "${REPOSITORY_ROOT}/bin/libz.dll")
 
 foreach(REQUIRED_FILE IN LISTS RUNTIME_FILES)
     if(NOT EXISTS "${REQUIRED_FILE}")

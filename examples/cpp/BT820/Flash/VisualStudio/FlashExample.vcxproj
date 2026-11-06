@@ -64,7 +64,7 @@
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\..\..\..\..\bin\btflashemu.dll" "$(OutDir)btflashemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\libz.dll" "$(OutDir)libz.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\flash-820-default.bin" "$(OutDir)flash-820-default.bin" || exit /b 1</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -90,7 +90,7 @@ copy /Y "$(ProjectDir)..\flash-820-default.bin" "$(OutDir)flash-820-default.bin"
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\..\..\..\..\bin\btflashemu.dll" "$(OutDir)btflashemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\libz.dll" "$(OutDir)libz.dll" || exit /b 1
 copy /Y "$(ProjectDir)..\flash-820-default.bin" "$(OutDir)flash-820-default.bin" || exit /b 1</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

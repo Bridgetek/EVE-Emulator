@@ -14,7 +14,7 @@ DLL from C# through the included P/Invoke wrapper examples.
 bin/
   bt8xxemu.dll      Runtime DLL for the emulator
   btflashemu.dll    Runtime library for flash emulation
-  zlib.dll          Runtime compression dependency
+  libz.dll          Runtime compression dependency
 
 include/
   bt8xxemu.h        Public emulator API header
@@ -83,7 +83,7 @@ On Windows, file paths in the native API use `eve_tchar_t`, which is
    they are available on the process `PATH`:
    - `bt8xxemu.dll`
    - `btflashemu.dll` when attaching Flash
-   - `zlib.dll`
+   - `libz.dll`
 
 Include the public API with:
 
@@ -278,7 +278,7 @@ examples/CPP/BT817/Flash/build/bin/Debug/BT817FlashExample.exe
 examples/CPP/BT817/Flash/VisualStudio/bin/Debug/FlashExample.exe
 ```
 
-Both builds copy `bt8xxemu.dll`, `btflashemu.dll`, `zlib.dll`, and
+Both builds copy `bt8xxemu.dll`, `btflashemu.dll`, `libz.dll`, and
 `flash-817-default.bin` beside the executable. See the
 [example README](examples/CPP/BT817/Flash/README.md) for complete Debug and
 Release instructions.
@@ -349,7 +349,7 @@ examples/CPP/BT820/SDCard/build/bin/Debug/BT820SDCardExample.exe
 examples/CPP/BT820/SDCard/VisualStudio/bin/Debug/SDCardExample.exe
 ```
 
-Both projects copy `bt8xxemu.dll`, `zlib.dll`, and the `sd` folder beside the
+Both projects copy `bt8xxemu.dll`, `libz.dll`, and the `sd` folder beside the
 executable. When the emulator window closes, the example ejects the SD card
 before destroying the emulator. See the
 [SD Card example README](examples/CPP/BT820/SDCard/README.md) for complete
@@ -401,7 +401,7 @@ bundled, so customers do not need the source headers or build tools.
 When distributing an application that uses the emulator, include the executable
 or library you built along with the runtime files from `bin/` that it depends
 on. Flash examples require `btflashemu.dll`; the BT820 SD Card example does not
-attach Flash and therefore deploys only `bt8xxemu.dll` and `zlib.dll`.
+attach Flash and therefore deploys only `bt8xxemu.dll` and `libz.dll`.
 
 ## Notes
 

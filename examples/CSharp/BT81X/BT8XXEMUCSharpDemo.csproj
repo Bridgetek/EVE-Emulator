@@ -87,7 +87,7 @@
       if not exist "$(TargetDir)" mkdir "$(TargetDir)"
       copy /Y "$(MSBuildProjectDirectory)\..\..\..\bin\bt8xxemu.dll" "$(TargetDir)bt8xxemu.dll"
       copy /Y "$(MSBuildProjectDirectory)\..\..\..\bin\btflashemu.dll" "$(TargetDir)btflashemu.dll"
-      copy /Y "$(MSBuildProjectDirectory)\..\..\..\bin\zlib.dll" "$(TargetDir)zlib.dll"
+      copy /Y "$(MSBuildProjectDirectory)\..\..\..\bin\libz.dll" "$(TargetDir)libz.dll"
       copy /Y "$(MSBuildProjectDirectory)\flash-817-default.bin" "$(TargetDir)flash-817-default.bin"
     </PostBuildEvent>
   </PropertyGroup>

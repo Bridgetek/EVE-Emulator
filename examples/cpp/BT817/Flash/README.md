@@ -50,7 +50,7 @@ Both build methods copy these files beside the executable:
 ```text
 bt8xxemu.dll
 btflashemu.dll
-zlib.dll
+libz.dll
 flash-817-default.bin
 ```
 

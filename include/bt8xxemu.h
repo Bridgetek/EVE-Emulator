@@ -542,7 +542,8 @@ BT8XXEMU_API extern void BT8XXEMU_setWindowRotate(BT8XXEMU_Emulator *emulator, i
 // Use an filesystem image as virtual SD card. BT820 and up only. Returns 1 on success
 BT8XXEMU_API extern int BT8XXEMU_insertSDCardImage(BT8XXEMU_Emulator *emulator, const eve_tchar_t *filePath, int readOnly);
 
-// Mount a folder as a virtual SD card. Writes are stored in-memory and discarded on exit. BT820 and up only. Returns image size on success
+// Mount a folder as a virtual SD card. Writes are stored in-memory and discarded on exit. BT820 and up only. Returns image size on success.
+// The image is the smallest power of two from 64 MiB that holds the folder, or minimumSize if that is larger
 BT8XXEMU_API extern ptrdiff_t BT8XXEMU_insertSDCardFolder(BT8XXEMU_Emulator *emulator, const eve_tchar_t *folderPath, ptrdiff_t minimumSize, int readOnly);
 
 // Ejects the current virtual SD card

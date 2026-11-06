@@ -72,7 +72,7 @@ Both build methods copy these items beside the executable:
 
 ```text
 bt8xxemu.dll
-zlib.dll
+libz.dll
 sd/
   bicycle.anim.reloc
 ```

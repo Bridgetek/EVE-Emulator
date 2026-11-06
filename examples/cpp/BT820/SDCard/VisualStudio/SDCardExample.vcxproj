@@ -63,7 +63,7 @@
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\libz.dll" "$(OutDir)libz.dll" || exit /b 1
 if not exist "$(OutDir)sd" mkdir "$(OutDir)sd" || exit /b 1
 copy /Y "$(ProjectDir)..\sd\bicycle.anim.reloc" "$(OutDir)sd\bicycle.anim.reloc" || exit /b 1</Command>
     </PostBuildEvent>
@@ -89,7 +89,7 @@ copy /Y "$(ProjectDir)..\sd\bicycle.anim.reloc" "$(OutDir)sd\bicycle.anim.reloc"
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)..\..\..\..\..\bin\bt8xxemu.dll" "$(OutDir)bt8xxemu.dll" || exit /b 1
-copy /Y "$(ProjectDir)..\..\..\..\..\bin\zlib.dll" "$(OutDir)zlib.dll" || exit /b 1
+copy /Y "$(ProjectDir)..\..\..\..\..\bin\libz.dll" "$(OutDir)libz.dll" || exit /b 1
 if not exist "$(OutDir)sd" mkdir "$(OutDir)sd" || exit /b 1
 copy /Y "$(ProjectDir)..\sd\bicycle.anim.reloc" "$(OutDir)sd\bicycle.anim.reloc" || exit /b 1</Command>
     </PostBuildEvent>

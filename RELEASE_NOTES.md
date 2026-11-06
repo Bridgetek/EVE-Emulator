@@ -1,5 +1,21 @@
 # EVE Emulator Release Notes
 
+## Version 5.3.36 - November 6, 2026
+
+### Timing and SD Card Emulation
+
+- `REG_CLOCK` now advances continuously instead of once per frame, reducing
+  coprocessor timeout warnings.
+- Improved internal EVE SD card emulation accuracy for reset and status-block
+  behavior.
+- Tested virtual FAT32 against all firmware patches, including stricter
+  firmware handling of end-of-chain markers.
+
+### Dependencies
+
+- Updated to zlib 1.4. The runtime DLL is now named `libz.dll` instead of
+  `zlib.dll`.
+
 ## Version 5.3.35 - October 15, 2026
 
 ### Performance
