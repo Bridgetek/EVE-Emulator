@@ -1,0 +1,7 @@
+scene,updates,update_fps,display_fps,host_bytes_per_update,avg_dl_bytes,max_dl_bytes,max_dl_percent,underruns,fullframe_16bpp_bytes,host_vs_fullframe_percent,fault
+"Needle gauge",365,60.71,61.37,495,2853,2856,34.9,0,768000,0.064,""
+"Page transitions",232,38.57,56.36,280,2885,4420,54.0,0,768000,0.036,""
+"Kinetic list",329,54.72,56.22,1271,3044,3588,43.8,0,768000,0.166,""
+"Dense text",350,58.17,61.16,1979,6430,6492,79.2,0,768000,0.258,""
+"History chart",365,60.83,61.33,3548,4171,6932,84.6,0,768000,0.462,""
+"30 static pages",344,57.30,61.80,775,2372,2372,29.0,0,768000,0.101,""

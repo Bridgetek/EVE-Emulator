@@ -31,6 +31,7 @@ packages/
 examples/
   CPP/
     BT817/
+      Benchmark/    C++ GUI benchmark with six BT817 scenes and CSV results
       Flash/        C++ example that attaches a Flash image to a BT817
     BT820/
       Flash/        C++ example using BT820 Flash addressing and scanout
@@ -299,6 +300,25 @@ Both builds copy `bt8xxemu.dll`, `btflashemu.dll`, `libz.dll`, and
 `flash-817-default.bin` beside the executable. See the
 [example README](examples/CPP/BT817/Flash/README.md) for complete Debug and
 Release instructions.
+
+## Running the BT817 C++ Benchmark
+
+[`examples/CPP/BT817/Benchmark`](examples/CPP/BT817/Benchmark) runs six 800x480
+GUI scenes and reports host write bytes, display-list usage, emulator frame
+rates, and underruns. It uses the Flash image from the BT817 Flash example and
+includes reference images and a sample CSV in `sample_output/`. Emulator timing
+does not represent BT817 hardware performance.
+
+Build and run it on Windows x64 from the repository root:
+
+```powershell
+cmake -S examples/CPP/BT817/Benchmark -B examples/CPP/BT817/Benchmark/build -G "Visual Studio 17 2022" -A x64
+cmake --build examples/CPP/BT817/Benchmark/build --config Release
+.\examples\CPP\BT817\Benchmark\build\bin\Release\BT817Benchmark.exe
+```
+
+See the [Benchmark README](examples/CPP/BT817/Benchmark/README.md) for the
+interactive, capture, and CSV options and the measurement details.
 
 ## Running the BT820 C++ Flash Example
 
